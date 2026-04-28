@@ -88,11 +88,22 @@ func (s *store) handleTasks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *store) handleTask(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/tasks/")
-	if id == "" {
+	path := strings.TrimPrefix(r.URL.Path, "/api/tasks/")
+	if path == "" {
 		writeError(w, http.StatusBadRequest, "missing task id")
 		return
 	}
+	// Check for sub-resource routes: /api/tasks/{id}/complete
+	if strings.HasSuffix(path, "/complete") {
+		id := strings.TrimSuffix(path, "/complete")
+		if r.Method == http.MethodPost {
+			s.completeTask(w, id)
+		} else {
+			writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		}
+		return
+	}
+	id := path
 	switch r.Method {
 	case http.MethodGet:
 		s.getTask(w, id)
@@ -206,6 +217,24 @@ func (s *store) deleteTask(w http.ResponseWriter, id string) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (s *store) completeTask(w http.ResponseWriter, id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	task, ok := s.tasks[id]
+	if !ok {
+		writeError(w, http.StatusNotFound, "task not found")
+		return
+	}
+	if task.Status == "done" {
+		writeError(w, http.StatusConflict, "task is already completed")
+		return
+	}
+	task.Status = "done"
+	task.UpdatedAt = time.Now().UTC()
+	s.tasks[id] = task
+	writeJSON(w, http.StatusOK, task)
+}
+
 // --- Auth middleware ---
 
 func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -245,7 +274,7 @@ const openapiSpec = `{
   "openapi": "3.1.0",
   "info": {
     "title": "Task Manager API",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "A simple task management REST API for demonstrating SDK generation."
   },
   "servers": [
@@ -417,6 +446,48 @@ const openapiSpec = `{
           "204": { "description": "Task deleted" },
           "404": {
             "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks/{task_id}/complete": {
+      "post": {
+        "operationId": "complete_task",
+        "summary": "Mark a task as done",
+        "description": "Convenience endpoint to transition a task to 'done' status. Returns 409 if the task is already completed.",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "The task UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task marked as done",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Task" }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Task is already completed",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" }

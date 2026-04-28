@@ -8,6 +8,7 @@ import {
   NotFoundError,
   UnprocessableEntityError,
   PermissionDeniedError,
+  ConflictError,
 } from "./generated/typescript/src/index";
 
 // ── Helpers ──────────────────────────────────────────────────────────
@@ -172,6 +173,43 @@ async function run() {
   await test("listTasks has one task remaining", async () => {
     const resp = await client.listTasks();
     assertEqual(resp.total, 1, "total");
+  });
+
+  console.log("\n── Complete Task ──\n");
+
+  await test("completeTask marks task as done", async () => {
+    const task = await client.createTask({ title: "Finish report", priority: 2 });
+    assertEqual(task.status, "pending", "initial status");
+    const completed = await client.completeTask(task.id, {});
+    assertEqual(completed.id, task.id, "id unchanged");
+    assertEqual(completed.status, "done", "status is done");
+    assertEqual(completed.title, "Finish report", "title unchanged");
+    // Clean up
+    await client.deleteTask(task.id);
+  });
+
+  await test("completeTask 409 on already-completed task", async () => {
+    const task = await client.createTask({ title: "Already done" });
+    await client.completeTask(task.id, {});
+    try {
+      await client.completeTask(task.id, {});
+      throw new Error("Expected ConflictError");
+    } catch (e) {
+      assert(e instanceof ConflictError, `expected ConflictError, got ${(e as Error).constructor.name}`);
+      assertEqual((e as ConflictError).status, 409, "status");
+      const msg = (e as any).errorMessage;
+      assert(msg.includes("already completed"), `errorMessage should mention already completed, got: ${msg}`);
+    }
+    await client.deleteTask(task.id);
+  });
+
+  await test("completeTask 404 on nonexistent task", async () => {
+    try {
+      await client.completeTask("00000000-0000-0000-0000-000000000000", {});
+      throw new Error("Expected NotFoundError");
+    } catch (e) {
+      assert(e instanceof NotFoundError, `expected NotFoundError, got ${(e as Error).constructor.name}`);
+    }
   });
 
   console.log("\n── Error Handling ──\n");

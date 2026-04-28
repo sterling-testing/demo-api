@@ -1,0 +1,115 @@
+name: Generate SDKs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'openapi.json'
+      - 'sterling.toml'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - name: Checkout demo-api
+      uses: actions/checkout@v4
+
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: 0.15.2
+
+    - name: Checkout Sterling
+      uses: actions/checkout@v4
+      with:
+        repository: hdresearch/sterling
+        path: sterling
+
+    - name: Build Sterling
+      run: cd sterling && zig build -Doptimize=ReleaseFast 2>/dev/null
+
+    - name: Generate SDKs
+      run: |
+        # Sterling needs templates relative to its own directory
+        cd sterling && ./zig-out/bin/sterling generate \
+          --spec ${{ github.workspace }}/openapi.json \
+          --config ${{ github.workspace }}/sterling.toml 2>/dev/null
+
+        echo "Generated files:"
+        for lang in typescript python rust go; do
+          dir="${{ github.workspace }}/generated/$lang"
+          if [ -d "$dir" ]; then
+            count=$(find "$dir" -type f | wc -l)
+            echo "  $lang: $count files"
+          else
+            echo "  $lang: MISSING"
+          fi
+        done
+
+    - name: Clean TypeScript SDK (remove Vers-specific SSH module)
+      run: |
+        rm -rf generated/typescript/src/lib
+        # Remove SSH exports from index.ts — rewrite to keep only core exports
+        python3 -c "
+import re
+with open('generated/typescript/src/index.ts') as f:
+    content = f.read()
+# Remove any export blocks or lines referencing ssh/vm-ssh
+content = re.sub(r'export\s*\{[^}]*\}\s*from\s*\"\.\/lib\/ssh\";\n?', '', content)
+content = re.sub(r'export\s+type\s*\{[^}]*\}\s*from\s*\"\.\/lib\/ssh\";\n?', '', content)
+content = re.sub(r'export\s*\{[^}]*\}\s*from\s*\"\.\/lib\/vm-ssh\";\n?', '', content)
+with open('generated/typescript/src/index.ts', 'w') as f:
+    f.write(content)
+"
+
+    - name: Push TypeScript SDK
+      run: |
+        cd generated/typescript
+        rm -rf .git
+        git init -b main
+        git config user.name "sterling-bot"
+        git config user.email "sterling-bot@users.noreply.github.com"
+        git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-ts.git
+        git add -A
+        git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
+        git push origin main --force
+
+    - name: Push Python SDK
+      run: |
+        cd generated/python
+        rm -rf .git
+        git init -b main
+        git config user.name "sterling-bot"
+        git config user.email "sterling-bot@users.noreply.github.com"
+        git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-python.git
+        git add -A
+        git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
+        git push origin main --force
+
+    - name: Push Rust SDK
+      run: |
+        cd generated/rust
+        rm -rf .git
+        git init -b main
+        git config user.name "sterling-bot"
+        git config user.email "sterling-bot@users.noreply.github.com"
+        git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-rust.git
+        git add -A
+        git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
+        git push origin main --force
+
+    - name: Push Go SDK
+      run: |
+        cd generated/go
+        rm -rf .git
+        git init -b main
+        git config user.name "sterling-bot"
+        git config user.email "sterling-bot@users.noreply.github.com"
+        git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-go.git
+        git add -A
+        git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
+        git push origin main --force

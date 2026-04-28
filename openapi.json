@@ -2,7 +2,7 @@
     "openapi": "3.1.0",
     "info": {
         "title": "Task Manager API",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "description": "A simple task management REST API for demonstrating SDK generation."
     },
     "servers": [
@@ -224,6 +224,57 @@
                     },
                     "404": {
                         "description": "Task not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/tasks/{task_id}/complete": {
+            "post": {
+                "operationId": "complete_task",
+                "summary": "Mark a task as done",
+                "description": "Convenience endpoint to transition a task to 'done' status. Returns 409 if the task is already completed.",
+                "parameters": [
+                    {
+                        "name": "task_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "The task UUID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Task marked as done",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Task"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Task is already completed",
                         "content": {
                             "application/json": {
                                 "schema": {

@@ -3,25 +3,25 @@
 
 [project]
 name = "taskmanager-sdk"
-version = "0.1.0"
+version = "0.2.0"
 description = "Task Manager API - a demo for Sterling SDK generation"
 
 [targets.typescript]
 language = "typescript"
 repository = "sterling-testing/taskmanager-ts"
-output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/typescript"
+output_dir = "../generated/typescript"
 
 [targets.python]
 language = "python"
 repository = "sterling-testing/taskmanager-python"
-output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/python"
+output_dir = "../generated/python"
 
 [targets.rust]
 language = "rust"
 repository = "sterling-testing/taskmanager-rust"
-output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/rust"
+output_dir = "../generated/rust"
 
 [targets.go]
 language = "go"
 repository = "sterling-testing/taskmanager-go"
-output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/go"
+output_dir = "../generated/go"

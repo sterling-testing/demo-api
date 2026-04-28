@@ -25,3 +25,18 @@ output_dir = "../generated/rust"
 language = "go"
 repository = "sterling-testing/taskmanager-go"
 output_dir = "../generated/go"
+
+[targets.dart]
+language = "dart"
+repository = "sterling-testing/taskmanager-dart"
+output_dir = "../generated/dart"
+
+[targets.scala]
+language = "scala"
+repository = "sterling-testing/taskmanager-scala"
+output_dir = "../generated/scala"
+
+[targets.swift]
+language = "swift"
+repository = "sterling-testing/taskmanager-swift"
+output_dir = "../generated/swift"

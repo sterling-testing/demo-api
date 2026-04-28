@@ -41,7 +41,7 @@ jobs:
           --config ${{ github.workspace }}/sterling.toml 2>/dev/null
 
         echo "Generated files:"
-        for lang in typescript python rust go; do
+        for lang in typescript python rust go dart scala swift; do
           dir="${{ github.workspace }}/generated/$lang"
           if [ -d "$dir" ]; then
             count=$(find "$dir" -type f | wc -l)
@@ -104,6 +104,42 @@ jobs:
         git config user.name "sterling-bot"
         git config user.email "sterling-bot@users.noreply.github.com"
         git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-go.git
+        git add -A
+        git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
+        git push origin main --force
+
+    - name: Push Dart SDK
+      run: |
+        cd generated/dart
+        rm -rf .git
+        git init -b main
+        git config user.name "sterling-bot"
+        git config user.email "sterling-bot@users.noreply.github.com"
+        git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-dart.git
+        git add -A
+        git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
+        git push origin main --force
+
+    - name: Push Scala SDK
+      run: |
+        cd generated/scala
+        rm -rf .git
+        git init -b main
+        git config user.name "sterling-bot"
+        git config user.email "sterling-bot@users.noreply.github.com"
+        git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-scala.git
+        git add -A
+        git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
+        git push origin main --force
+
+    - name: Push Swift SDK
+      run: |
+        cd generated/swift
+        rm -rf .git
+        git init -b main
+        git config user.name "sterling-bot"
+        git config user.email "sterling-bot@users.noreply.github.com"
+        git remote add origin https://x-access-token:${{ secrets.SDK_PUSH_TOKEN }}@github.com/sterling-testing/taskmanager-swift.git
         git add -A
         git commit -m "SDK update from demo-api@${{ github.sha }}" --allow-empty
         git push origin main --force

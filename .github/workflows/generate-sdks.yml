@@ -53,18 +53,11 @@ jobs:
     - name: Clean TypeScript SDK (remove Vers-specific SSH module)
       run: |
         rm -rf generated/typescript/src/lib
-        # Remove SSH exports from index.ts — rewrite to keep only core exports
-        python3 -c "
-import re
-with open('generated/typescript/src/index.ts') as f:
-    content = f.read()
-# Remove any export blocks or lines referencing ssh/vm-ssh
-content = re.sub(r'export\s*\{[^}]*\}\s*from\s*\"\.\/lib\/ssh\";\n?', '', content)
-content = re.sub(r'export\s+type\s*\{[^}]*\}\s*from\s*\"\.\/lib\/ssh\";\n?', '', content)
-content = re.sub(r'export\s*\{[^}]*\}\s*from\s*\"\.\/lib\/vm-ssh\";\n?', '', content)
-with open('generated/typescript/src/index.ts', 'w') as f:
-    f.write(content)
-"
+        # Remove SSH-related export lines from index.ts
+        grep -v 'lib/ssh\|lib/vm-ssh' generated/typescript/src/index.ts > /tmp/index.ts.clean || true
+        # Also remove any orphaned export type blocks that reference SSH types
+        python3 -c 'import re,sys; t=open(sys.argv[1]).read(); t=re.sub(r"export\s+(type\s+)?\{[^}]*SSH[^}]*\}[^;]*;","",t); open(sys.argv[1],"w").write(t)' /tmp/index.ts.clean
+        mv /tmp/index.ts.clean generated/typescript/src/index.ts
 
     - name: Push TypeScript SDK
       run: |

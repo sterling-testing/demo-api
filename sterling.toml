@@ -1,0 +1,27 @@
+# Sterling SDK Generator Configuration for sterling-testing/demo-api
+# Generates typed SDKs from the Task Manager API
+
+[project]
+name = "taskmanager-sdk"
+version = "0.1.0"
+description = "Task Manager API - a demo for Sterling SDK generation"
+
+[targets.typescript]
+language = "typescript"
+repository = "sterling-testing/taskmanager-ts"
+output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/typescript"
+
+[targets.python]
+language = "python"
+repository = "sterling-testing/taskmanager-python"
+output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/python"
+
+[targets.rust]
+language = "rust"
+repository = "sterling-testing/taskmanager-rust"
+output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/rust"
+
+[targets.go]
+language = "go"
+repository = "sterling-testing/taskmanager-go"
+output_dir = "/Users/yev/hdr/sterling-demo/demo-api/generated/go"
